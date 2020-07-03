@@ -4,8 +4,8 @@ from .models import Post, Group, Comment, Follow
 
 
 class PostAdmin(admin.ModelAdmin):
-    list_display = ('pk','text', 'pub_date', 'author')
-    search_fields = ('author','text',)
+    list_display = ('pk', 'text', 'pub_date', 'author')
+    search_fields = ('author', 'text',)
     list_filter = ('pub_date',)
     empty_value_display = "-пусто-"
 
@@ -22,6 +22,7 @@ class CommentAdmin(admin.ModelAdmin):
 
 class FollowAdmin(admin.ModelAdmin):
     list_display = ('pk', 'user', 'author')
+
 
 admin.site.register(Post, PostAdmin)
 admin.site.register(Group, GroupAdmin)

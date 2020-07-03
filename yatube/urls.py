@@ -10,7 +10,9 @@ urlpatterns = [
     path('about/', include('django.contrib.flatpages.urls')),
     path('auth/', include('users.urls')),
     path('auth/', include('django.contrib.auth.urls')),
-    path('about-author/', views.flatpage, {'url': '/about-author/'}, name='about'),
+    path(
+        'about-author/', views.flatpage, {'url': '/about-author/'}, name='about'
+    ),
     path('about-spec/', views.flatpage, {'url': '/about-spec/'}, name='spec'),
     path('', include('posts.urls')),
 ]
@@ -19,5 +21,9 @@ handler404 = 'posts.views.page_not_found'
 handler500 = 'posts.views.server_error'
 
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    urlpatterns += static(
+        settings.MEDIA_URL, document_root=settings.MEDIA_ROOT
+    )
+    urlpatterns += static(
+        settings.STATIC_URL, document_root=settings.STATIC_ROOT
+    )

@@ -2,8 +2,16 @@ from django.test import TestCase, Client, override_settings
 from django.contrib.auth.models import User
 from django.urls import reverse
 from django.core.files.images import ImageFile
-from .models import Post, Group, Comment, Follow
+from .models import Post, Group, Follow
 import tempfile
+
+
+DUMMY_CACHE = {
+            'default': {
+                'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+                'TIMEOUT': 0,
+            }
+        }
 
 
 class ProfileTest(TestCase):
@@ -30,42 +38,53 @@ class ProfileTest(TestCase):
         self.client_auth.force_login(self.user)
 
     def test_signup(self):
-        response = self.client_auth.get(reverse('profile',
-            args=[self.user.username]))
+        response = self.client_auth.get(
+            reverse(
+                'profile',
+                args=[self.user.username]
+            )
+        )
         self.assertEqual(response.status_code, 200)
 
     def test_new_post(self):
-        response = self.client_auth.post(reverse('new_post'),
-            {'text': 'test post'}, follow=True)
-        expected_response = self.client_auth.get(reverse('index')) 
+        response = self.client_auth.post(
+            reverse('new_post'),
+            {'text': 'test post'},
+            follow=True
+        )
+        expected_response = self.client_auth.get(reverse('index'))
         post = Post.objects.get(author=self.user, text='test post')
         self.assertEqual(response.content, expected_response.content)
         self.assertIn(post, Post.objects.all())
 
     def test_new_post_unauthorized(self):
-        response = self.client_unauth.post(reverse('new_post'),
-            {'text': 'test post'}, follow=True)
+        response = self.client_unauth.post(
+            reverse('new_post'),
+            {'text': 'test post'},
+            follow=True
+        )
         self.assertRedirects(response, '/auth/login/?next=/new/')
         self.assertEqual(Post.objects.count(), 1)
 
     def assert_post_view(self, user, post):
         exp_view1 = self.client_auth.get(reverse('index'))
-        exp_view2 = self.client_auth.get(reverse('profile',
-            args=[user.username]))
-        exp_view3 = self.client_auth.get(reverse('post',
-            args=[user.username, post.id]))
+        exp_view2 = self.client_auth.get(
+            reverse(
+                'profile',
+                args=[user.username]
+            )
+        )
+        exp_view3 = self.client_auth.get(
+            reverse(
+                'post',
+                args=[user.username, post.id]
+            )
+        )
         self.assertContains(exp_view1, post.text)
         self.assertContains(exp_view2, post.text)
         self.assertContains(exp_view3, post.text)
 
-    @override_settings(
-        CACHES = {
-            'default': {
-                'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
-                'TIMEOUT': 0,
-            }
-        }
-    )
+    @override_settings(CACHES=DUMMY_CACHE)
     def test_new_post_view(self):
         post = Post.objects.create(
             text='test post NEW!!!',
@@ -74,14 +93,7 @@ class ProfileTest(TestCase):
         )
         self.assert_post_view(self.user, post)
 
-    @override_settings(
-        CACHES = {
-            'default': {
-                'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
-                'TIMEOUT': 0,
-            }
-        }
-    )
+    @override_settings(CACHES=DUMMY_CACHE)
     def test_edit_post_view(self):
         post = Post.objects.create(
             text='test post NEW!!!',
@@ -98,43 +110,48 @@ class ProfileTest(TestCase):
         response = self.client_auth.get('testfault')
         self.assertEqual(response.status_code, 404)
 
-    @override_settings(
-        CACHES = {
-            'default': {
-                'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
-                'TIMEOUT': 0,
-            }
-        }
-    )
+    @override_settings(CACHES=DUMMY_CACHE)
     def test_image_view(self):
         post = Post.objects.create(
             text='post with image',
             author=self.user,
             group=self.group,
-            image = ImageFile(tempfile.NamedTemporaryFile(), 'test.jpeg')
+            image=ImageFile(tempfile.NamedTemporaryFile(), 'test.jpeg')
         )
         exp_views = []
         exp_views.append(self.client_auth.get(reverse('index')))
-        exp_views.append(self.client_auth.get(reverse('profile',
-            args=[self.user.username])))
-        exp_views.append(self.client_auth.get(reverse('post',
-            args=[self.user.username, post.id])))
-        exp_views.append(self.client_auth.get(reverse('group',
-            args=[self.group.slug])))
+        exp_views.append(
+            self.client_auth.get(
+                reverse('profile', args=[self.user.username])
+            )
+        )
+        exp_views.append(
+            self.client_auth.get(
+                reverse('post', args=[self.user.username, post.id])
+            )
+        )
+        exp_views.append(
+            self.client_auth.get(
+                reverse('group', args=[self.group.slug])
+            )
+        )
         for exp_view in exp_views:
             with self.subTest():
                 self.assertContains(exp_view, '<img')
 
     def test_not_image(self):
         fake_img = tempfile.NamedTemporaryFile()
-        response = self.client_auth.post(reverse('new_post'),
-        {'text': 'post without image', 'image': fake_img})
-        self.assertFormError(response, 'form', 'image', 'Отправленный файл пуст.')
+        response = self.client_auth.post(
+            reverse('new_post'),
+            {'text': 'post without image', 'image': fake_img}
+        )
+        self.assertFormError(
+            response, 'form', 'image', 'Отправленный файл пуст.')
 
     def test_follow(self):
         Follow.objects.create(
-            user = self.user,
-            author = self.author
+            user=self.user,
+            author=self.author
         )
         post = Post.objects.create(
             text='Post No 2',
@@ -148,8 +165,8 @@ class ProfileTest(TestCase):
 
     def test_unfollow(self):
         follow = Follow.objects.create(
-            user = self.user,
-            author = self.author
+            user=self.user,
+            author=self.author
         )
         post = Post.objects.create(
             text='Post No 2',
@@ -160,25 +177,30 @@ class ProfileTest(TestCase):
         follow.delete()
         response = self.client_auth.get(reverse('follow_index'))
         self.assertNotContains(response, post.text)
-        
+
     def test_comment_auth(self):
-        self.client_auth.post(reverse('add_comment',
-            args=[self.author.username, self.post.id]), {'text': 'Comment'})
-        response = self.client_auth.get(reverse('post',
-            args=[self.author.username, self.post.id]))
+        self.client_auth.post(
+            reverse('add_comment', args=[self.author.username, self.post.id]),
+            {'text': 'Comment'}
+        )
+        response = self.client_auth.get(
+            reverse('post', args=[self.author.username, self.post.id])
+        )
         self.assertContains(response, 'Comment')
         self.assertEqual(self.post.comments.count(), 1)
 
     def test_comment_unauth(self):
-        self.client_unauth.post(reverse('add_comment',
-            args=[self.author.username, self.post.id]), {'text': 'Comment'})
+        self.client_unauth.post(
+            reverse('add_comment', args=[self.author.username, self.post.id]),
+            {'text': 'Comment'}
+        )
         self.assertEqual(self.post.comments.count(), 0)
 
     def test_cache(self):
         self.client_auth.get(reverse('index'))
-        self.client_auth.post(reverse('new_post'),
-            {'text': 'test post'}, follow=True)
+        self.client_auth.post(
+            reverse('new_post'), {'text': 'test post'}, follow=True
+        )
         response = self.client_auth.get(reverse('index'))
         self.assertNotContains(response, 'test post')
         self.assertEqual(Post.objects.count(), 2)
-
