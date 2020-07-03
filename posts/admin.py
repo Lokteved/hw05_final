@@ -10,15 +10,9 @@ class PostAdmin(admin.ModelAdmin):
     empty_value_display = "-пусто-"
 
 
-admin.site.register(Post, PostAdmin)
-
-
 class GroupAdmin(admin.ModelAdmin):
     list_display = ('pk', 'title', 'description')
     search_fields = ('title',)
-
-
-admin.site.register(Group, GroupAdmin)
 
 
 class CommentAdmin(admin.ModelAdmin):
@@ -26,11 +20,10 @@ class CommentAdmin(admin.ModelAdmin):
     search_fields = ('post',)
 
 
-admin.site.register(Comment, CommentAdmin)
-
-
 class FollowAdmin(admin.ModelAdmin):
     list_display = ('pk', 'user', 'author')
 
-
+admin.site.register(Post, PostAdmin)
+admin.site.register(Group, GroupAdmin)
+admin.site.register(Comment, CommentAdmin)
 admin.site.register(Follow, FollowAdmin)
